@@ -107,7 +107,7 @@ public:
         }
 
         for (int i = 0; i < layers.size() - 1; i++) {
-            print_debug_info("FeedForward, layer 1" + std::to_string(i+1));
+            print_debug_info("FeedForward, layer " + std::to_string(i+1));
             layers[i].Connect(layers[i + 1]);
         }
 
