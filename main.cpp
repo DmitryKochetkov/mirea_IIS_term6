@@ -20,8 +20,8 @@ private:
 
 public:
     double setInput(const double& input) {
-        std::cout << "Updated neuron (value " << input << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
         this->input = input;
+        std::cout << "Updated neuron (value " << input << ", activation " << getActivation() << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
     }
 
     double getWeight(int neuron_id) {
@@ -77,6 +77,14 @@ class NeuralNetwork {
 private:
     std::vector<Layer> layers;
 
+    bool MSG_ON = true;
+
+    //TODO: move out
+    void print_debug_info(const std::string& info) {
+        if (MSG_ON)
+            std::cout << info << std::endl;
+    }
+
 public:
     explicit NeuralNetwork(const std::vector<size_t>& sizes) {
         for (int i = 0; i < sizes.size() - 1; i++)
@@ -85,7 +93,25 @@ public:
     }
 
     void FeedForward(const std::vector<double>& input) {
-        //TODO: implement
+        print_debug_info("Trying to FeedForward...");
+
+        if (input.size() != layers[0].body.size())
+        {
+            print_debug_info("(FeedForward) Incorrect input size " + std::to_string(input.size()) + ", expected " + std::to_string(layers[0].body.size()) + ".");
+            return;
+        }
+
+        print_debug_info("FeedForward, layer 0");
+        for (int i = 0; i < layers[0].body.size(); i++) {
+            layers[0].body[i].setInput(input[i]);
+        }
+
+        for (int i = 0; i < layers.size() - 1; i++) {
+            print_debug_info("FeedForward, layer 1" + std::to_string(i+1));
+            layers[i].Connect(layers[i + 1]);
+        }
+
+        print_debug_info("Feed Forward complete.");
     }
 
     void BackPropagation() {
@@ -95,6 +121,7 @@ public:
 
 int main() {
     NeuralNetwork network({2, 2, 2});
+    network.FeedForward({1, 2});
 
     return 0;
 }
