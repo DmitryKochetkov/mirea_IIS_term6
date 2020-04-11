@@ -4,6 +4,8 @@
 #include <random>
 #include <string>
 #include <memory>
+#include <fstream>
+#include <climits>
 
 double get_random(double min_range, double max_range) {
     std::random_device r;
@@ -119,9 +121,87 @@ public:
     }
 };
 
+template <typename T>
+T swap_endian(T u)
+{
+    static_assert (CHAR_BIT == 8, "CHAR_BIT != 8");
+
+    union
+    {
+        T u;
+        unsigned char u8[sizeof(T)];
+    } source, dest;
+
+    source.u = u;
+
+    for (size_t k = 0; k < sizeof(T); k++)
+        dest.u8[k] = source.u8[sizeof(T) - k - 1];
+
+    return dest.u;
+}
+
 int main() {
-    NeuralNetwork network({2, 2, 2});
-    network.FeedForward({1, 2});
+    FILE* train_img = fopen("/home/dimedrol/Desktop/mnist/train-images-idx3-ubyte", "rb");
+    FILE* train_label = fopen("/home/dimedrol/Desktop/mnist/train-labels.idx1-ubyte", "rb");
+
+    if (train_img == nullptr) {
+        std::cout << "Cannot open train images." << std::endl;
+        return 1;
+    }
+
+    if (train_label == nullptr) {
+        std::cout << "Cannot open train labels." << std::endl;
+        return 1;
+    }
+
+    const int n = 1;
+    int msb[n];
+    int n_images;
+    int width;
+    int height;
+    fread(&msb, sizeof(int), n, train_img);
+    fread(&n_images, sizeof(int), 1, train_img);
+    fread(&width, sizeof(int), 1, train_img);
+    fread(&height, sizeof(int), 1, train_img);
+
+    n_images = swap_endian(n_images);
+    width = swap_endian(width);
+    height = swap_endian(height);
+
+
+    std::cout << std::endl;
+    std::cout << "Reading MNIST headers..." << std::endl;
+    std::cout << "Number of images: " << n_images << std::endl;
+    std::cout << "Number of rows: " << width << std::endl;
+    std::cout << "Number of columns: " << height << std::endl;
+
+    unsigned char** images = new unsigned char*[n_images];
+    unsigned char* labels = new unsigned char[n_images];
+
+    for (int i = 0; i < n_images; i++) {
+        images[i] = new unsigned char[width * height];
+        fread(images[i], sizeof(unsigned char), width * height, train_img);
+    }
+    int buf;
+
+    fread(&buf, sizeof(int), 2, train_label);
+    fread(labels, sizeof(unsigned char), n_images, train_label);
+
+    fclose(train_img);
+    fclose(train_label);
+
+    int k;
+    std::cin >> k;
+    std::cout << "Image[k] (" << (int)labels[k] << "): " << std::endl;
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+            std::cout << (int)images[k][i * height + j] << " ";
+        std::cout << std::endl;
+    }
+
+    //NeuralNetwork network({static_cast<unsigned long>(width * height), 128, 10});
+    //network.FeedForward(first_image);
 
     return 0;
 }
