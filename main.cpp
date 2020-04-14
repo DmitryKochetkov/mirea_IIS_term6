@@ -33,6 +33,7 @@ public:
 
     double getActivation() {
         return Sigmoid::Logistic(input).get();
+        //return Radial::Gaussian(input).get();
     }
 
     double getBias() {
@@ -52,14 +53,18 @@ public:
 };
 
 class Layer {
-
+private:
+    std::vector<Neuron> body;
 public:
-    std::vector<Neuron> body; //TODO: make private
 
     explicit Layer(size_t size, size_t next_size) {
         for (int i = 0; i < size; i++)
             body.push_back(Neuron(0.0, next_size));
     }
+
+    std::vector<Neuron> getBody() {
+        return body;
+    };
 
     double getWeightedSum(int neuron_id) {
         double result = 0.0;
@@ -71,7 +76,7 @@ public:
 
     void Connect(Layer& next) {
         for (int i = 0; i < next.body.size(); i++) {
-            next.body[i].setInput(getWeightedSum(i) + next.body[i].getBias());
+            next.body[i].setInput(getWeightedSum(i) + body[i].getBias());
         }
     }
 };
@@ -96,18 +101,18 @@ public:
         layers.push_back(Layer(sizes.back(), 0));
     }
 
-    std::vector<double> FeedForward(const std::vector<double>& input) {
+    const std::vector<double> FeedForward(const std::vector<double>& input) {
         print_debug_info("Trying to FeedForward...");
 
-        if (input.size() != layers[0].body.size())
+        if (input.size() != layers[0].getBody().size())
         {
-            print_debug_info("(FeedForward) Incorrect input size " + std::to_string(input.size()) + ", expected " + std::to_string(layers[0].body.size()) + ".");
+            print_debug_info("(FeedForward) Incorrect input size " + std::to_string(input.size()) + ", expected " + std::to_string(layers[0].getBody().size()) + ".");
             throw 1; //TODO: throw exception
         }
 
         print_debug_info("FeedForward, layer 0");
-        for (int i = 0; i < layers[0].body.size(); i++) {
-            layers[0].body[i].setInput(input[i]);
+        for (int i = 0; i < layers[0].getBody().size(); i++) {
+            layers[0].getBody()[i].setInput(input[i]);
         }
 
         for (int i = 0; i < layers.size() - 1; i++) {
@@ -118,7 +123,7 @@ public:
         print_debug_info("Feed Forward complete.");
 
         std::vector<double> output_activations;
-        for (auto& neuron: layers.back().body) {
+        for (auto& neuron: layers.back().getBody()) {
             output_activations.push_back(neuron.getActivation());
         }
 
@@ -132,8 +137,21 @@ public:
     }
 
     void BackPropagation(const std::vector<double>& input, const std::vector<double>& output) {
-        print_debug_info("Training in progress...");
-        //TODO: calculate a cost function
+        print_debug_info("Back propogation: Training in progress...");
+
+        if (input.size() != layers[0].getBody().size())
+        {
+            print_debug_info("(FeedForward) Incorrect input size " + std::to_string(input.size()) + ", expected " + std::to_string(layers[0].getBody().size()) + ".");
+            throw 1; //TODO: throw exception
+        }
+
+        if (output.size() != layers.back().getBody().size())
+        {
+            print_debug_info("(FeedForward) Incorrect output size " + std::to_string(output.size()) + ", expected " + std::to_string(layers.back().getBody().size()) + ".");
+            throw 1; //TODO: throw exception
+        }
+
+        //TODO: calculate a negative gradient of the cost function
     }
 };
 
@@ -147,14 +165,8 @@ int main() {
 
     NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 128, 10});
 
-    auto c = dataHandler.getTrainImage(0);
-    for (int i = 0; i < 28; i++) {
-        for (int j = 0; j < 28; j++)
-            std::cout << c[i * 28 + j] << " ";
-        std::cout << std::endl;
-    }
-
-    //network.FeedForward(dataHandler.getTrainImage(0));
+    network.FeedForward(dataHandler.getTrainImage(0));
+    network.BackPropagation(dataHandler.getTrainImage(0), dataHandler.getTrainLabel(0));
 
 //    int k;
 //    std::cin >> k;

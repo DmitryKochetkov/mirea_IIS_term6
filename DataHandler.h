@@ -59,7 +59,9 @@ public:
 
     void readTrain(const char* path_images, const char* path_labels);
 
-    std::vector<double>& getTrainImage(int index);
+    std::vector<double> getTrainImage(int index);
+
+    std::vector<double> getTrainLabel(int index);
 };
 
 

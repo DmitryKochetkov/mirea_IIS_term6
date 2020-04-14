@@ -68,6 +68,13 @@ void mnist::DataHandler::readTrain(const char *path_images, const char *path_lab
     readTrainLabels(path_labels);
 }
 
-std::vector<double> &mnist::DataHandler::getTrainImage(int index) {
+std::vector<double> mnist::DataHandler::getTrainImage(int index) {
     return trainImages.at(index);
+}
+
+std::vector<double> mnist::DataHandler::getTrainLabel(int index) {
+    std::vector<double> result;
+    result.resize(10);
+    result[trainLabels.at(index)] = 1.0;
+    return result;
 }
