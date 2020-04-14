@@ -26,7 +26,7 @@ void mnist::DataHandler::readTrainImages(const char *path) {
         unsigned char* buf = new unsigned char[width * height];
         fread(buf, sizeof(unsigned char), width * height, train_img);
         for (int j = 0; j < width * height; j++)
-            trainImages.at(i).push_back((double)buf[i]);
+            trainImages.at(i).push_back((double)(buf[i * width + j]));
         delete[] buf;
     }
 

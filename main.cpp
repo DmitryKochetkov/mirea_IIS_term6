@@ -58,11 +58,11 @@ public:
 
     explicit Layer(size_t size, size_t next_size) {
         for (int i = 0; i < size; i++)
-            body.push_back(Neuron(0, next_size));
+            body.push_back(Neuron(0.0, next_size));
     }
 
     double getWeightedSum(int neuron_id) {
-        double result = 0;
+        double result = 0.0;
         for (auto &neuron: body) {
             result += neuron.getActivation();
         }
@@ -133,7 +133,7 @@ public:
 
     void BackPropagation(const std::vector<double>& input, const std::vector<double>& output) {
         print_debug_info("Training in progress...");
-
+        //TODO: calculate a cost function
     }
 };
 
@@ -147,7 +147,14 @@ int main() {
 
     NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 128, 10});
 
-    network.FeedForward(dataHandler.getTrainImage(0));
+    auto c = dataHandler.getTrainImage(0);
+    for (int i = 0; i < 28; i++) {
+        for (int j = 0; j < 28; j++)
+            std::cout << c[i * 28 + j] << " ";
+        std::cout << std::endl;
+    }
+
+    //network.FeedForward(dataHandler.getTrainImage(0));
 
 //    int k;
 //    std::cin >> k;
