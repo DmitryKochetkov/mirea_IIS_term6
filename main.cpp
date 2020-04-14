@@ -83,6 +83,7 @@ private:
     bool MSG_ON = true;
 
     //TODO: move out
+    //TODO: use StringStream
     void print_debug_info(const std::string& info) {
         if (MSG_ON)
             std::cout << info << std::endl;
@@ -95,7 +96,7 @@ public:
         layers.push_back(Layer(sizes.back(), 0));
     }
 
-    std::vector<double>& FeedForward(const std::vector<double>& input) {
+    std::vector<double> FeedForward(const std::vector<double>& input) {
         print_debug_info("Trying to FeedForward...");
 
         if (input.size() != layers[0].body.size())
@@ -117,12 +118,22 @@ public:
         print_debug_info("Feed Forward complete.");
 
         std::vector<double> output_activations;
-        for (auto neuron: layers.back().body)
+        for (auto& neuron: layers.back().body) {
             output_activations.push_back(neuron.getActivation());
+        }
+
+        std::string result = "[";
+        for (int i = 0; i < output_activations.size() - 1; i++)
+            result += std::to_string(i) + " -> " + std::to_string(output_activations[i]) + ", ";
+        result += std::to_string(output_activations.size() - 1) + " -> " + std::to_string(output_activations.back()) + "]";
+
+        print_debug_info("Result activations: " + result);
+        return output_activations;
     }
 
-    void BackPropagation() {
-        //TODO: implement
+    void BackPropagation(const std::vector<double>& input, const std::vector<double>& output) {
+        print_debug_info("Training in progress...");
+
     }
 };
 
@@ -137,7 +148,6 @@ int main() {
     NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 128, 10});
 
     network.FeedForward(dataHandler.getTrainImage(0));
-
 
 //    int k;
 //    std::cin >> k;
