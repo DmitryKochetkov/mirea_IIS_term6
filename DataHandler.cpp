@@ -30,7 +30,7 @@ void mnist::DataHandler::readTrainImages(const char *path) {
         trainImages.resize(countTrainImages);
         for (int i = 0; i < countTrainImages; i++) {
             for (int j = 0; j < width * height; j++)
-                trainImages[i].push_back(raw_data[i][j]);
+                trainImages[i].push_back(raw_data[i][j] / 255.0);
         }
 
         delete[] raw_data;

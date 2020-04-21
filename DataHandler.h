@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
 
 namespace mnist {
     class DataHandler;
@@ -64,13 +65,13 @@ public:
     std::vector<double> getTrainImage(int index);
 
     void printTrainImage(int index) {
-        std::cout << "Image[" << index << "] (" << getTrainLabel(index) << "): " << std::endl;
+        std::cout << "Image[" << index << "] (digit " << getTrainLabel(index) << "): " << std::endl;
         std::vector<double> image = getTrainImage(index);
         for (int i = 0; i < height; i++)
         {
             std::cout << "Row " << i << ": ";
             for (int j = 0; j < width; j++)
-                std::cout << image[i * width + j] << " ";
+                std::cout << std::setprecision(1) << image[i * width + j] << " ";
             std::cout << std::endl;
         }
     }
