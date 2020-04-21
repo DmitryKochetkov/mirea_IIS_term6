@@ -2,35 +2,39 @@
 // Created by dimedrol on 12.04.2020.
 //
 
+#include <fstream>
 #include "DataHandler.h"
 
 void mnist::DataHandler::readTrainImages(const char *path) {
-    FILE* train_img = fopen(path, "rb");
 
-    if (train_img == nullptr)
-        throw std::runtime_error("Cannot open train images.");
+    std::ifstream file(path, std::ios::binary);
 
-    int msb;
-    int n_images;
-    fread(&msb, sizeof(int), 1, train_img);
-    fread(&n_images, sizeof(int), 1, train_img);
-    fread(&width, sizeof(int), 1, train_img);
-    fread(&height, sizeof(int), 1, train_img);
+    if(file.is_open()) {
+        int magic_number = 0;
 
-    countTrainImages = swap_endian(n_images);
-    width = swap_endian(width);
-    height = swap_endian(height);
-    trainImages.resize(countTrainImages);
+        file.read((char *)&magic_number, sizeof(magic_number));
+        magic_number = swap_endian(magic_number);
 
-    for (int i = 0; i < countTrainImages; i++) {
-        unsigned char* buf = new unsigned char[width * height];
-        fread(buf, sizeof(unsigned char), width * height, train_img);
-        for (int j = 0; j < width * height; j++)
-            trainImages.at(i).push_back((double)(buf[i * width + j]));
-        delete[] buf;
+        if(magic_number != 2051) throw std::runtime_error("Invalid MNIST image file!");
+
+        file.read((char *)&countTrainImages, sizeof(countTrainImages)), countTrainImages = swap_endian(countTrainImages);
+        file.read((char *)&height, sizeof(height)), height = swap_endian(height);
+        file.read((char *)&width, sizeof(width)), width = swap_endian(width);
+
+        unsigned char** raw_data = new unsigned char*[countTrainImages];
+        for(int i = 0; i < countTrainImages; i++) {
+            raw_data[i] = new unsigned char[width * height];
+            file.read((char *)raw_data[i], width * height);
+        }
+
+        trainImages.resize(countTrainImages);
+        for (int i = 0; i < countTrainImages; i++) {
+            for (int j = 0; j < width * height; j++)
+                trainImages[i].push_back(raw_data[i][j]);
+        }
+
+        delete[] raw_data;
     }
-
-    fclose(train_img);
 }
 
 void mnist::DataHandler::readTrainLabels(const char *path) {
@@ -69,10 +73,19 @@ void mnist::DataHandler::readTrain(const char *path_images, const char *path_lab
 }
 
 std::vector<double> mnist::DataHandler::getTrainImage(int index) {
-    return trainImages.at(index);
+    //TODO: normalize data
+    return(trainImages.at(index));
 }
 
-std::vector<double> mnist::DataHandler::getTrainLabel(int index) {
+int mnist::DataHandler::getTrainLabel(int index) {
+    std::vector<double> vector = getTrainLabelVectorized(index);
+    for (int i = 0; i < vector.size(); i++)
+        if (vector[i] == 1.0)
+            return i;
+    return -1;
+}
+
+std::vector<double> mnist::DataHandler::getTrainLabelVectorized(int index) {
     std::vector<double> result;
     result.resize(10);
     result[trainLabels.at(index)] = 1.0;

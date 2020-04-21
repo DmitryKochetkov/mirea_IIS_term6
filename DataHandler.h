@@ -64,17 +64,20 @@ public:
     std::vector<double> getTrainImage(int index);
 
     void printTrainImage(int index) {
-
-        std::cout << "Image[" << index << "] (" << *std::find(getTrainLabel(index).begin(), getTrainLabel(index).end(), 1.0) << "): " << std::endl;
+        std::cout << "Image[" << index << "] (" << getTrainLabel(index) << "): " << std::endl;
+        std::vector<double> image = getTrainImage(index);
         for (int i = 0; i < height; i++)
         {
+            std::cout << "Row " << i << ": ";
             for (int j = 0; j < width; j++)
-                std::cout << (int)trainImages[index][i * height + j] << " ";
+                std::cout << image[i * width + j] << " ";
             std::cout << std::endl;
         }
     }
 
-    std::vector<double> getTrainLabel(int index);
+    int getTrainLabel(int index);
+
+    std::vector<double> getTrainLabelVectorized(int index);
 };
 
 
