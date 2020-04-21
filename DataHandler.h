@@ -9,6 +9,8 @@
 #include <vector>
 #include <cstdio>
 #include <stdexcept>
+#include <iostream>
+#include <algorithm>
 
 namespace mnist {
     class DataHandler;
@@ -60,6 +62,17 @@ public:
     void readTrain(const char* path_images, const char* path_labels);
 
     std::vector<double> getTrainImage(int index);
+
+    void printTrainImage(int index) {
+
+        std::cout << "Image[" << index << "] (" << *std::find(getTrainLabel(index).begin(), getTrainLabel(index).end(), 1.0) << "): " << std::endl;
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+                std::cout << (int)trainImages[index][i * height + j] << " ";
+            std::cout << std::endl;
+        }
+    }
 
     std::vector<double> getTrainLabel(int index);
 };

@@ -2,11 +2,13 @@
 #include <vector>
 #include "Activation_Functions.h"
 #include "DataHandler.h"
+#include "OutputFunctions.h"
 #include <random>
 #include <string>
 #include <memory>
 #include <fstream>
 #include <climits>
+#include <algorithm>
 
 double get_random(double min_range, double max_range) {
     std::random_device r;
@@ -22,18 +24,35 @@ private:
     std::vector<double> weights; //i-й элемент - вес связи нейрона с i-м нейроном следующего слоя
 
 public:
-    double setInput(const double& input) {
+    void setInput(const double& input) {
         this->input = input;
-        std::cout << "Updated neuron (value " << input << ", activation " << getActivation() << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
+        //std::cout << "Updated neuron (value " << input << ", activation " << getActivation() << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
+    }
+
+    double getInput() {
+        return input;
     }
 
     double getWeight(int neuron_id) {
         return weights.at(neuron_id);
     }
 
+    void setWeight(int neuron_id, double value) {
+        weights[neuron_id] = value;
+    }
+
+    std::vector<double> getWeights() {
+        return weights;
+    }
+
     double getActivation() {
         return Sigmoid::Logistic(input).get();
         //return Radial::Gaussian(input).get();
+    }
+
+    double getActivationDerivative() {
+        return Sigmoid::Logistic(input).getDerivative();
+        //return Radial::Gaussian(input).getDerivative();
     }
 
     double getBias() {
@@ -46,7 +65,7 @@ public:
         this->weights.resize(next_size);
         for (auto item = weights.begin(); item != weights.end(); item++)
             *item = get_random(-1, 1);
-        std::cout << "Initialized neuron (value " << input << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
+        //std::cout << "Initialized neuron (value " << input << ", bias " << bias << ") with " << weights.size() << " weights" << std::endl;
     }
 
     //Neuron(value, Layer& prev_layer = nullptr)
@@ -84,24 +103,24 @@ public:
 class NeuralNetwork {
 private:
     std::vector<Layer> layers;
+    double LearningRate;
 
     bool MSG_ON = true;
 
     //TODO: move out
-    //TODO: use StringStream
     void print_debug_info(const std::string& info) {
         if (MSG_ON)
             std::cout << info << std::endl;
     }
 
 public:
-    explicit NeuralNetwork(const std::vector<size_t>& sizes) {
+    explicit NeuralNetwork(const std::vector<size_t>& sizes, double LearningRate): LearningRate(LearningRate) {
         for (int i = 0; i < sizes.size() - 1; i++)
             layers.push_back(Layer(sizes[i], sizes[i+1]));
         layers.push_back(Layer(sizes.back(), 0));
     }
 
-    const std::vector<double> FeedForward(const std::vector<double>& input) {
+    std::vector<double> FeedForward(const std::vector<double>& input) {
         print_debug_info("Trying to FeedForward...");
 
         if (input.size() != layers[0].getBody().size())
@@ -137,21 +156,46 @@ public:
     }
 
     void BackPropagation(const std::vector<double>& input, const std::vector<double>& output) {
-        print_debug_info("Back propogation: Training in progress...");
+        print_debug_info("Back propagation: Training in progress...");
 
-        if (input.size() != layers[0].getBody().size())
-        {
-            print_debug_info("(FeedForward) Incorrect input size " + std::to_string(input.size()) + ", expected " + std::to_string(layers[0].getBody().size()) + ".");
-            throw 1; //TODO: throw exception
-        }
+        FeedForward(input);
 
         if (output.size() != layers.back().getBody().size())
         {
-            print_debug_info("(FeedForward) Incorrect output size " + std::to_string(output.size()) + ", expected " + std::to_string(layers.back().getBody().size()) + ".");
+            print_debug_info("(Back propagation) Incorrect output size " + std::to_string(output.size()) + ", expected " + std::to_string(layers.back().getBody().size()) + ".");
             throw 1; //TODO: throw exception
         }
 
-        //TODO: calculate a negative gradient of the cost function
+        std::vector<double> deltaLast;
+        deltaLast.resize(output.size());
+
+        //print_debug_info("(Back propagation) Deltas, layer " + std::to_string(layers.size() - 1) + ": ");
+        for (int i = 0; i < deltaLast.size(); i++) {
+            deltaLast[i] = output.at(i) - layers.back().getBody().at(i).getActivation();
+        }
+
+        //std::cout << ext_out::vector_to_string(deltaLast) << std::endl;
+
+        std::vector<std::vector<double>> errors;
+        errors.resize(layers.size());
+
+        for (int k = layers.size() - 2; k >= 0; k--) {
+
+            errors[k].resize(layers[k].getBody().size());
+
+            for (int i = 0; i < errors[k].size(); i++)
+                for (auto& weight: layers[k].getBody()[i].getWeights())
+                    errors[k][i] += deltaLast[i] * weight;
+        }
+
+        for (int k = 0; k < layers.size() - 2; k++) {
+            for (int i = 0; i < errors[k].size(); i++)
+                for (auto &weight: layers[k].getBody()[i].getWeights())
+                    weight += layers[k].getBody()[i].getActivationDerivative() * errors[k][i] *
+                              layers[k].getBody()[i].getInput() *
+                              this->LearningRate; //производная активации от взвешенной сумммы входов? то есть без bias?
+        }
+
     }
 };
 
@@ -163,20 +207,21 @@ int main() {
             "/home/dimedrol/Desktop/mnist/train-images-idx3-ubyte",
             "/home/dimedrol/Desktop/mnist/train-labels.idx1-ubyte");
 
-    NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 128, 10});
+    NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 10, 10}, 0.001);
 
-    network.FeedForward(dataHandler.getTrainImage(0));
-    network.BackPropagation(dataHandler.getTrainImage(0), dataHandler.getTrainLabel(0));
+    int epochs = 100;
+    for (int i = 0; i < epochs; i++) {
+        network.BackPropagation(dataHandler.getTrainImage(i), dataHandler.getTrainLabel(i));
+        std::cout << "Back propagation " << i << " complete" << std::endl;
+    }
 
-//    int k;
-//    std::cin >> k;
-//    std::cout << "Image[k] (" << (int)labels[k] << "): " << std::endl;
-//    for (int i = 0; i < height; i++)
-//    {
-//        for (int j = 0; j < width; j++)
-//            std::cout << (int)images[k][i * height + j] << " ";
-//        std::cout << std::endl;
-//    }
+    std::cout << "Learning complete. Starting tests..." << std::endl;
+
+    for (int i = epochs; i < epochs + 50; i++) {
+        std::cout << "Attempt " << i << ".";
+        dataHandler.printTrainImage(i);
+        network.FeedForward(dataHandler.getTrainImage(i));
+    }
 
 
     return 0;
