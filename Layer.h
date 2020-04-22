@@ -15,7 +15,7 @@ private:
     Neuron bias;
 
 public:
-    explicit Layer(size_t size, size_t next_size): bias(get_random(-1.0, 1.0), next_size) {
+    explicit Layer(size_t size, size_t next_size): bias(1.0, next_size) {
         for (int i = 0; i < size; i++)
             neurons.push_back(Neuron(0.5, next_size));
     }
@@ -33,6 +33,10 @@ public:
         for (int i = 0; i < next.neurons.size(); i++) {
             next.neurons[i].setInput(getWeightedSum(i));
         }
+    }
+
+    Neuron& getNeuron(int index) {
+        return neurons[index];
     }
 
     std::vector<Neuron> getNeurons() {

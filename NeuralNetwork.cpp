@@ -14,7 +14,7 @@ std::vector<double> NeuralNetwork::FeedForward(const std::vector<double> &input)
     }
 
     for (int i = 0; i < layers[0].getNeurons().size(); i++) {
-        layers[0].getNeurons()[i].setInput(input[i]);
+        layers[0].getNeuron(i).setInput(input[i]);
     }
 
     for (int i = 0; i < layers.size() - 1; i++) {
@@ -43,7 +43,7 @@ void NeuralNetwork::BackPropagation(const std::vector<double> &input, const std:
         throw "(Back propagation) Incorrect output size " + std::to_string(output.size()) + ", expected " + std::to_string(layers.back().getNeurons().size()) + ".";
     }
 
-    std::cout << "Back propogation in progress..." << std::endl;
+    std::cout << "Back propagation in progress..." << std::endl;
     FeedForward(input);
 
     std::vector<double> deltaLast;
@@ -65,15 +65,19 @@ void NeuralNetwork::BackPropagation(const std::vector<double> &input, const std:
         errors[k].resize(layers[k].getNeurons().size());
 
         for (int i = 0; i < errors[k].size(); i++)
-            for (auto& weight: layers[k].getNeurons()[i].getWeights())
+            for (auto& weight: layers[k].getNeuron(i).getWeights())
                 errors[k][i] += errors[k+1][i] * weight;
     }
 
     for (int k = 1; k < layers.size() - 2; k++) {
         for (int i = 0; i < errors[k].size(); i++)
-            for (auto &weight: layers[k].getNeurons()[i].getWeights())
-                weight += layers[k].getNeurons()[i].getActivationDerivative() * errors[k][i] *
-                          layers[k-1].getWeightedSum(i) *
-                          this->LearningRate; //производная активации от взвешенной сумммы входов? то есть без bias?
+            for (auto &weight: layers[k].getNeuron(i).getWeights()) {
+                double delta = layers[k].getNeuron(i).getActivationDerivative() * errors[k][i] *
+                               layers[k].getWeightedSum(i) *
+                               this->LearningRate; //производная активации от взвешенной сумммы входов? то есть без bias?
+                //std::cout << "Weight " <<  weight << " changed with delta = " << delta << std::endl;
+                layers[k].getNeuron(i).setWeight(i, weight+delta);
+                //weight += delta;
+            }
     }
 }

@@ -42,7 +42,9 @@ public:
     }
 
     double getActivation() {
-        return Sigmoid::Logistic(input).get();
+        if (isInputNeuron)
+            return input;
+        else return Sigmoid::Logistic(input).get();
     }
 
     double getActivationDerivative() {

@@ -10,8 +10,13 @@ int main() {
             "/home/dimedrol/Desktop/mnist/train-images-idx3-ubyte",
             "/home/dimedrol/Desktop/mnist/train-labels.idx1-ubyte");
 
-    NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 10, 10}, 0.1);
+//    NeuralNetwork network({5, 16, 16, 2}, 0.1);
+//    network.FeedForward({0.3, 0.6, 0.25, 0.1, 0.7});
+//    network.BackPropagation({0.3, 0.6, 0.25, 0.1, 0.7}, {0.0, 1.0});
+//    network.FeedForward({0.3, 0.6, 0.25, 0.1, 0.7});
+//    network.FeedForward({1.0, 1.0, 1.0, 1.0, 1.0});
 
+    NeuralNetwork network({static_cast<unsigned long>(dataHandler.getWidth() * dataHandler.getHeight()), 16, 16, 10}, 0.1);
     int epochs = 100;
     for (int i = 0; i < epochs; i++) {
         network.BackPropagation(dataHandler.getTrainImage(i), dataHandler.getTrainLabelVectorized(i));
@@ -21,7 +26,7 @@ int main() {
     std::cout << "Learning complete. Starting tests..." << std::endl;
 
     for (int i = epochs; i < epochs + 50; i++) {
-        std::cout << "Attempt " << i << ". ";
+        std::cout << "Attempt " << i-epochs+1 << ". ";
         dataHandler.printTrainImage(i);
         auto output = network.FeedForward(dataHandler.getTrainImage(i));
 
@@ -33,7 +38,7 @@ int main() {
                 response_digit = j;
             }
 
-        std::cout << "Response digit is " << response_digit << std::endl;
+        std::cout << "Response digit is " << response_digit << std::endl << std::endl;
     }
 
     return 0;
